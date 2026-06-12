@@ -1,0 +1,1107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="theme-color" content="#1a6fc4"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="OphthalDash"/>
+<meta name="application-name" content="OphthalDash"/>
+<meta name="msapplication-TileColor" content="#1a6fc4"/>
+<meta name="msapplication-TileImage" content="icon-144x144.png"/>
+<link rel="manifest" href="manifest.json"/>
+<link rel="icon" type="image/png" sizes="32x32" href="icon-32x32.png"/>
+<link rel="icon" type="image/png" sizes="16x16" href="icon-16x16.png"/>
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png"/>
+<link rel="apple-touch-icon" sizes="167x167" href="icon-167x167.png"/>
+<link rel="apple-touch-icon" sizes="152x152" href="icon-152x152.png"/>
+<link rel="apple-touch-icon" sizes="120x120" href="icon-120x120.png"/>
+<link rel="shortcut icon" href="favicon.ico"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=5.0"/>
+<title>OphthalDash</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"/>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+/* ── TOKENS ── */
+:root{
+  --bg:#f0f4f8;--card:#fff;--sb:#0a1628;--sb-h:#162040;--inp:#fff;
+  --bdr:#d1dbe8;--bdr-f:#1a6fc4;
+  --t1:#0d1b2e;--t2:#4a5f7a;--t3:#7a92aa;--tnav:#a8bdd1;
+  --blue:#1a6fc4;--blue-l:#3b8fd4;--teal:#0e9f8e;
+  --green:#0f9e5c;--amber:#d97706;--red:#dc2626;--purple:#7c3aed;
+  --sh:0 1px 4px rgba(10,22,40,.08);--sh2:0 4px 16px rgba(10,22,40,.11);
+  --r:10px;--rl:16px;--sw:232px;--mono:'JetBrains Mono',monospace;--ease:.18s ease;
+}
+[data-theme=dark]{
+  --bg:#0d1520;--card:#152035;--sb:#080e1a;--sb-h:#162040;--inp:#1a2740;
+  --bdr:#1e3050;--bdr-f:#3b8fd4;
+  --t1:#e4edf7;--t2:#8aabc8;--t3:#4a6480;--tnav:#7a99bb;
+}
+[data-theme=oled]{
+  --bg:#000;--card:#0a0a0a;--sb:#000;--sb-h:#0f0f0f;--inp:#0f0f0f;
+  --bdr:#1a1a1a;--bdr-f:#3b8fd4;
+  --t1:#f0f0f0;--t2:#909090;--t3:#505050;--tnav:#707070;
+}
+/* ── RESET ── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{overflow-x:hidden}body{overflow-x:hidden;width:100%;position:relative}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--t1);transition:background var(--ease),color var(--ease)}
+input,select,textarea{font-family:inherit;background:var(--inp);color:var(--t1);border:1px solid var(--bdr);border-radius:6px;padding:8px 11px;font-size:.85rem;width:100%;outline:none;transition:border-color var(--ease)}
+input:focus,select:focus,textarea:focus{border-color:var(--bdr-f);box-shadow:0 0 0 3px rgba(26,111,196,.13)}
+select option{background:var(--inp);color:var(--t1)}
+label{font-size:.75rem;font-weight:600;color:var(--t2);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px;display:block}
+/* ── LAYOUT ── */
+.app{display:flex;min-height:100vh;width:100%;position:relative;overflow-x:hidden}
+.sidebar{
+  width:var(--sw);background:var(--sb);flex-shrink:0;
+  display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:200;
+  transition:transform .28s ease,background var(--ease);overflow-y:auto;overflow-x:hidden;
+}
+.sb-logo{padding:18px 16px 14px;border-bottom:1px solid rgba(255,255,255,.06)}
+.sb-logo .ico{width:34px;height:34px;border-radius:8px;background:linear-gradient(135deg,var(--blue),var(--teal));display:flex;align-items:center;justify-content:center;font-size:17px;margin-bottom:7px}
+.sb-logo .nm{font-size:.93rem;font-weight:700;color:#fff;letter-spacing:-.02em}
+.sb-logo .sm{font-size:.63rem;color:var(--tnav);margin-top:1px}
+.sb-nav{padding:8px 0;flex:1}
+.sb-sec{font-size:.58rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);padding:10px 16px 3px}
+.nit{display:flex;align-items:center;gap:9px;padding:8px 16px;cursor:pointer;color:var(--tnav);font-size:.81rem;font-weight:500;border-left:2px solid transparent;transition:all var(--ease);white-space:nowrap}
+.nit:hover{background:var(--sb-h);color:#d0e4f7}
+.nit.on{background:rgba(26,111,196,.14);color:#fff;border-left-color:var(--blue)}
+.nit .i{font-size:13px;width:17px;text-align:center}
+.nbadge{margin-left:auto;background:var(--blue);color:#fff;font-size:.58rem;font-weight:700;padding:1px 5px;border-radius:10px;min-width:16px;text-align:center}
+.sb-foot{padding:12px 16px;border-top:1px solid rgba(255,255,255,.06)}
+.th-row{display:flex;gap:4px;margin-top:7px}
+.th-btn{flex:1;padding:5px 3px;border-radius:5px;border:1px solid rgba(255,255,255,.1);font-size:.64rem;cursor:pointer;background:rgba(255,255,255,.05);color:var(--tnav);font-weight:500;transition:all var(--ease);white-space:nowrap}
+.th-btn:hover,.th-btn.on{background:var(--blue);color:#fff;border-color:var(--blue)}
+.samp-btn{width:100%;padding:6px;margin-bottom:7px;border-radius:5px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:var(--tnav);font-size:.68rem;font-weight:500;cursor:pointer;transition:all var(--ease)}
+.samp-btn:hover{background:rgba(255,255,255,.14);color:#fff}
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:199}
+/* ── MAIN ── */
+.main{margin-left:var(--sw);flex:1;display:flex;flex-direction:column;min-height:100vh;min-width:0;overflow-x:hidden}
+.topbar{background:var(--card);border-bottom:1px solid var(--bdr);padding:10px 18px;display:flex;align-items:center;gap:9px;position:sticky;top:0;z-index:100;transition:background var(--ease);min-height:50px;overflow:hidden}
+.tb-title{font-size:.92rem;font-weight:700;color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tb-sub{font-size:.7rem;color:var(--t3);margin-top:1px}
+.tb-act{margin-left:auto;display:flex;align-items:center;gap:6px;flex-shrink:0}
+.hamburger{display:none;background:none;border:none;font-size:20px;cursor:pointer;color:var(--t1);padding:4px 5px;flex-shrink:0}
+.page{padding:16px;flex:1;min-width:0;overflow:hidden}
+.pane{display:none;animation:fi .2s ease}
+.pane.on{display:block}
+@keyframes fi{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+/* ── CARD ── */
+.card{background:var(--card);border:1px solid var(--bdr);border-radius:var(--rl);box-shadow:var(--sh);transition:background var(--ease),border-color var(--ease);overflow:hidden}
+.ch{padding:13px 16px 11px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.ct{font-size:.86rem;font-weight:700;color:var(--t1);display:flex;align-items:center;gap:6px}
+.cb{padding:16px}
+.mb12{margin-bottom:12px}.mb16{margin-bottom:16px}.mb20{margin-bottom:20px}
+/* ── KPI ── */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:11px;margin-bottom:18px}
+.kpi{background:var(--card);border:1px solid var(--bdr);border-radius:var(--r);padding:13px;position:relative;overflow:hidden;transition:box-shadow var(--ease)}
+.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--kc,var(--blue))}
+.kpi:hover{box-shadow:var(--sh2)}
+.kpi-lbl{font-size:.67rem;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px}
+.kpi-val{font-size:1.75rem;font-weight:700;color:var(--t1);line-height:1;font-family:var(--mono);letter-spacing:-.03em}
+.kpi-sub{font-size:.7rem;color:var(--t2);margin-top:4px}
+.kpi-ico{position:absolute;top:11px;right:11px;width:30px;height:30px;border-radius:7px;background:var(--kib,rgba(26,111,196,.1));display:flex;align-items:center;justify-content:center;font-size:14px}
+.pbar{height:5px;background:var(--bdr);border-radius:3px;overflow:hidden;margin-top:5px}
+.pfill{height:100%;border-radius:3px;transition:width 1s ease}
+/* ── GRID ── */
+.g2{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+.g3{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px}
+.fg{display:grid;grid-template-columns:repeat(auto-fill,minmax(195px,1fr));gap:12px}
+/* ── CHARTS ── */
+.ch-w{position:relative}
+/* ── BUTTONS ── */
+.btn{display:inline-flex;align-items:center;gap:5px;padding:8px 14px;border-radius:6px;font-size:.82rem;font-weight:600;cursor:pointer;border:none;transition:all var(--ease);font-family:inherit;white-space:nowrap}
+.btn-p{background:var(--blue);color:#fff}.btn-p:hover{background:var(--blue-l);box-shadow:0 3px 10px rgba(26,111,196,.35)}
+.btn-g{background:var(--bg);color:var(--t2);border:1px solid var(--bdr)}.btn-g:hover{background:var(--bdr);color:var(--t1)}
+.btn-s{background:var(--green);color:#fff}.btn-s:hover{filter:brightness(1.1)}
+.btn-r{background:transparent;color:var(--red);border:1px solid rgba(220,38,38,.3);font-size:.74rem;padding:4px 9px}.btn-r:hover{background:rgba(220,38,38,.1)}
+.btn-sm{padding:5px 10px;font-size:.76rem}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap}
+/* ── SECTION HEADING ── */
+.sh{font-size:.67rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.sh::after{content:'';flex:1;height:1px;background:var(--bdr)}
+/* ── STAT TABLE ── */
+.st{width:100%;border-collapse:collapse;font-size:.81rem}
+.st th{background:var(--bg);color:var(--t3);font-size:.67rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:8px 11px;text-align:left;border-bottom:1px solid var(--bdr)}
+.st td{padding:8px 11px;border-bottom:1px solid var(--bdr);color:var(--t1)}
+.st tr:last-child td{border-bottom:none}
+.st tr:hover td{background:var(--bg)}
+.sv{font-family:var(--mono);font-size:.82rem;font-weight:600;color:var(--blue)}
+.sig{display:inline-block;padding:2px 7px;border-radius:4px;font-size:.66rem;font-weight:700}
+.sig-y{background:rgba(15,158,92,.14);color:var(--green)}
+.sig-n{background:rgba(217,119,6,.14);color:var(--amber)}
+/* ── RECORDS TABLE ── */
+.tbl-bar{display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.tbl-search{flex:1;min-width:140px;max-width:320px;padding:7px 11px;font-size:.82rem}
+.tbl-info{font-size:.72rem;color:var(--t3);margin-left:auto;white-space:nowrap}
+.tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.rt{width:100%;border-collapse:collapse;font-size:.8rem;min-width:700px}
+.rt th{background:var(--bg);color:var(--t3);font-size:.66rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;padding:8px 10px;text-align:left;border-bottom:1px solid var(--bdr);white-space:nowrap;cursor:pointer;user-select:none}
+.rt th:hover{color:var(--blue)}
+.rt td{padding:8px 10px;border-bottom:1px solid var(--bdr);color:var(--t1);white-space:nowrap}
+.rt tr:last-child td{border-bottom:none}
+.rt tr:hover td{background:var(--bg)}
+.pager{display:flex;gap:5px;margin-top:12px;flex-wrap:wrap}
+.pg-btn{padding:4px 9px;border-radius:5px;border:1px solid var(--bdr);background:var(--card);color:var(--t2);font-size:.75rem;cursor:pointer;transition:all var(--ease)}
+.pg-btn:hover,.pg-btn.on{background:var(--blue);color:#fff;border-color:var(--blue)}
+/* ── BADGES ── */
+.bs{background:rgba(15,158,92,.14);color:var(--green);padding:2px 8px;border-radius:4px;font-size:.7rem;font-weight:700}
+.bf{background:rgba(220,38,38,.12);color:var(--red);padding:2px 8px;border-radius:4px;font-size:.7rem;font-weight:700}
+.bc{background:rgba(217,119,6,.12);color:var(--amber);padding:2px 8px;border-radius:4px;font-size:.7rem;font-weight:700}
+/* ── YEAR TABS ── */
+.ytabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
+.yt{padding:4px 13px;border-radius:20px;font-size:.76rem;font-weight:600;background:var(--card);border:1px solid var(--bdr);cursor:pointer;color:var(--t2);transition:all var(--ease)}
+.yt:hover{border-color:var(--blue);color:var(--blue)}
+.yt.on{background:var(--blue);color:#fff;border-color:var(--blue)}
+/* ── ALERTS ── */
+.alert{border-radius:var(--r);padding:11px 14px;font-size:.8rem;display:flex;align-items:flex-start;gap:9px}
+.ai{background:rgba(26,111,196,.1);border:1px solid rgba(26,111,196,.22);color:var(--blue)}
+.aw{background:rgba(217,119,6,.1);border:1px solid rgba(217,119,6,.22);color:var(--amber)}
+/* ── RESEARCH ── */
+.rs{background:var(--bg);border:1px solid var(--bdr);border-radius:var(--r);padding:16px;margin-bottom:14px}
+.rs h5{font-size:.82rem;font-weight:700;color:var(--blue);margin-bottom:9px;text-transform:uppercase;letter-spacing:.04em}
+.rs p,.rs li{font-size:.82rem;line-height:1.75;color:var(--t2)}
+.rs ul{padding-left:16px}
+/* ── TOAST ── */
+.toast-wrap{position:fixed;bottom:20px;right:16px;z-index:9999;display:flex;flex-direction:column;gap:7px;pointer-events:none;max-width:calc(100vw - 32px)}
+.toast{background:var(--card);border:1px solid var(--bdr);border-radius:var(--r);padding:11px 14px;box-shadow:var(--sh2);font-size:.8rem;color:var(--t1);display:flex;align-items:center;gap:9px;border-left:3px solid var(--blue);animation:tIn .25s ease;pointer-events:auto}
+.toast.ok{border-left-color:var(--green)}.toast.er{border-left-color:var(--red)}
+@keyframes tIn{from{transform:translateX(40px);opacity:0}to{transform:translateX(0);opacity:1}}
+@keyframes tOut{from{transform:translateX(0);opacity:1}to{transform:translateX(40px);opacity:0}}
+/* ── FOOTER ── */
+.footer{background:var(--card);border-top:1px solid var(--bdr);padding:11px 16px;text-align:center;font-size:.7rem;color:var(--t3)}
+/* ── PRINT ── */
+@media print{.sidebar,.topbar,.btn-row,.ytabs,.hamburger,.overlay,.footer{display:none!important}.main{margin-left:0!important;width:100%!important;max-width:100%!important}.page{padding:0!important}.card{box-shadow:none!important}}
+/* ── RESPONSIVE ── */
+@media(max-width:768px){
+  .sidebar{transform:translateX(-100%)}
+  .sidebar.open{transform:translateX(0)}
+  .overlay.show{display:block}
+  .main{margin-left:0!important;width:100%!important;overflow-x:hidden}
+  .hamburger{display:flex}
+  .kpi-grid{grid-template-columns:repeat(2,1fr)}
+  .fg{grid-template-columns:1fr 1fr}
+  .page{padding:12px;overflow-x:hidden}
+  .topbar{padding:9px 12px}
+  .tb-act .btn:not(.btn-sm){display:none}
+  .g2,.g3{grid-template-columns:1fr}
+}
+@media(max-width:420px){
+  .kpi-grid{grid-template-columns:repeat(2,1fr)}
+  .kpi-val{font-size:1.3rem}
+  .fg{grid-template-columns:1fr}
+  .btn-row{flex-direction:column;align-items:stretch}
+}
+</style>
+</head>
+<body data-theme="light">
+<div class="overlay" id="ov" onclick="closeSB()"></div>
+<div class="app">
+
+<!-- ═══ SIDEBAR ═══ -->
+<aside class="sidebar" id="sb">
+  <div class="sb-logo">
+    <div class="ico">👁️</div>
+    <div class="nm">OphthalDash</div>
+    <div class="sm">Surgical Analytics Platform</div>
+  </div>
+  <nav class="sb-nav">
+    <div class="sb-sec">Overview</div>
+    <div class="nit on" onclick="go('dashboard',this)"><span class="i">📊</span>Dashboard</div>
+    <div class="sb-sec">Data</div>
+    <div class="nit" onclick="go('entry',this)"><span class="i">➕</span>Add Surgery</div>
+    <div class="nit" onclick="go('records',this)"><span class="i">📋</span>Records<span class="nbadge" id="nbadge">0</span></div>
+    <div class="nit" onclick="go('io',this)"><span class="i">📁</span>Import / Export</div>
+    <div class="sb-sec">Analysis</div>
+    <div class="nit" onclick="go('stats',this)"><span class="i">🔬</span>Statistics</div>
+    <div class="nit" onclick="go('charts',this)"><span class="i">📈</span>Charts</div>
+    <div class="sb-sec">Output</div>
+    <div class="nit" onclick="go('research',this)"><span class="i">📄</span>Research Report</div>
+  </nav>
+  <div class="sb-foot">
+    <button class="samp-btn" onclick="loadSample()">🧪 Load Sample Data</button>
+    <div style="color:var(--tnav);font-size:.68rem;margin-bottom:6px">Theme</div>
+    <div class="th-row">
+      <button class="th-btn on" onclick="setTheme('light',this)">☀️ Light</button>
+      <button class="th-btn" onclick="setTheme('dark',this)">🌙 Dark</button>
+      <button class="th-btn" onclick="setTheme('oled',this)">⬛ OLED</button>
+    </div>
+  </div>
+</aside>
+
+<!-- ═══ MAIN ═══ -->
+<div class="main">
+  <header class="topbar">
+    <button class="hamburger" onclick="toggleSB()">☰</button>
+    <div style="min-width:0;flex:1">
+      <div class="tb-title" id="tbtitle">Dashboard</div>
+      <div class="tb-sub" id="tbsub">Surgical outcome overview</div>
+    </div>
+    <div class="tb-act">
+      <button class="btn btn-g btn-sm" onclick="go('entry',null)">➕ Add</button>
+      <button class="btn btn-p btn-sm" onclick="expPDF()">📄 PDF</button>
+    </div>
+  </header>
+
+  <main class="page">
+
+    <!-- ═══════════ DASHBOARD ═══════════ -->
+    <div class="pane on" id="pane-dashboard">
+      <div class="ytabs" id="yt-dash"></div>
+      <div class="kpi-grid" id="kpis"></div>
+      <div class="g2 mb20">
+        <div class="card">
+          <div class="ch"><div class="ct">🥧 Outcome Distribution</div></div>
+          <div class="cb"><div class="ch-w" style="height:220px"><canvas id="c-pie"></canvas></div></div>
+        </div>
+        <div class="card">
+          <div class="ch"><div class="ct">📊 Surgery Type Breakdown</div></div>
+          <div class="cb"><div class="ch-w" style="height:220px"><canvas id="c-type"></canvas></div></div>
+        </div>
+      </div>
+      <div class="g2 mb20">
+        <div class="card">
+          <div class="ch"><div class="ct">📈 Annual Performance Trend</div></div>
+          <div class="cb"><div class="ch-w" style="height:200px"><canvas id="c-trend"></canvas></div></div>
+        </div>
+        <div class="card">
+          <div class="ch"><div class="ct">🔵 Age vs Visual Improvement</div></div>
+          <div class="cb"><div class="ch-w" style="height:200px"><canvas id="c-scatter"></canvas></div></div>
+        </div>
+      </div>
+      <div class="card mb20">
+        <div class="ch"><div class="ct">📅 Year-wise Comparison</div></div>
+        <div class="cb" style="overflow-x:auto">
+          <table class="st" id="yr-tbl">
+            <thead><tr><th>Year</th><th>Total</th><th>Successful</th><th>Failed</th><th>Success %</th><th>Complication %</th><th>Avg VA Imp.</th></tr></thead>
+            <tbody id="yr-body"><tr><td colspan="7" style="text-align:center;color:var(--t3);padding:20px">No data yet</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════ ADD SURGERY ═══════════ -->
+    <div class="pane" id="pane-entry">
+      <div class="card">
+        <div class="ch">
+          <div class="ct">🩺 New Surgery Record</div>
+          <button class="btn btn-g btn-sm" onclick="clearForm()">🗑️ Clear</button>
+        </div>
+        <div class="cb">
+          <div class="alert ai mb16">💡 Fields marked * are required. Data is stored locally — never transmitted.</div>
+          <div class="sh">Patient Information</div>
+          <div class="fg mb16">
+            <div><label>Patient ID *</label><input id="f-pid" placeholder="e.g. PT-2024-001"/></div>
+            <div><label>Age (years) *</label><input id="f-age" type="number" min="1" max="120" placeholder="45"/></div>
+            <div><label>Gender *</label>
+              <select id="f-gender"><option value="">Select</option><option>Male</option><option>Female</option><option>Other</option></select>
+            </div>
+            <div><label>Eye Operated *</label>
+              <select id="f-eye"><option value="">Select</option><option>Right (OD)</option><option>Left (OS)</option><option>Both (OU)</option></select>
+            </div>
+          </div>
+          <div class="sh">Surgery Details</div>
+          <div class="fg mb16">
+            <div><label>Surgery Type *</label>
+              <select id="f-type"><option value="">Select Type</option>
+                <option>Cataract Surgery</option><option>Retinal Detachment Surgery</option>
+                <option>Vitrectomy</option><option>Glaucoma Surgery</option>
+                <option>Corneal Surgery</option><option>LASIK</option>
+                <option>Oculoplasty</option><option>Custom Procedure</option>
+              </select>
+            </div>
+            <div><label>Diagnosis</label><input id="f-diag" placeholder="e.g. Nuclear Cataract"/></div>
+            <div><label>Surgery Date *</label><input id="f-date" type="date"/></div>
+            <div><label>Follow-up (months)</label><input id="f-fu" type="number" min="0" placeholder="6"/></div>
+          </div>
+          <div class="sh">Visual Outcomes</div>
+          <div class="fg mb20">
+            <div><label>Pre-op Vision (LogMAR)</label><input id="f-pre" type="number" step="0.01" min="0" max="3" placeholder="1.00"/></div>
+            <div><label>Post-op Vision (LogMAR)</label><input id="f-post" type="number" step="0.01" min="0" max="3" placeholder="0.30"/></div>
+            <div><label>Outcome *</label>
+              <select id="f-out"><option value="">Select</option><option>Success</option><option>Failure</option></select>
+            </div>
+            <div><label>Complications</label><input id="f-comp" placeholder="None / describe briefly"/></div>
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-p" onclick="addRec()">💾 Save Record</button>
+            <button class="btn btn-g" onclick="clearForm()">🗑️ Clear Form</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════ RECORDS ═══════════ -->
+    <div class="pane" id="pane-records">
+      <div class="card">
+        <div class="ch">
+          <div class="ct">📋 Surgery Records</div>
+          <div style="display:flex;gap:6px">
+            <button class="btn btn-g btn-sm" onclick="expCSV()">📊 CSV</button>
+            <button class="btn btn-s btn-sm" onclick="expXLSX()">📗 Excel</button>
+          </div>
+        </div>
+        <div class="cb">
+          <div class="tbl-bar">
+            <input class="tbl-search" id="tbl-q" placeholder="🔍 Search records…" oninput="tblPage=1;tblRender()"/>
+            <select id="tbl-sz" onchange="tblPage=1;tblRender()" style="width:auto;padding:7px 10px;font-size:.8rem">
+              <option value="10">10 / page</option>
+              <option value="25">25 / page</option>
+              <option value="50">50 / page</option>
+            </select>
+            <span class="tbl-info" id="tbl-info"></span>
+          </div>
+          <div class="tbl-wrap">
+            <table class="rt">
+              <thead>
+                <tr>
+                  <th onclick="tblSort(0)">Patient ID ⇅</th>
+                  <th onclick="tblSort(1)">Age ⇅</th>
+                  <th onclick="tblSort(2)">Gender</th>
+                  <th onclick="tblSort(3)">Surgery Type ⇅</th>
+                  <th onclick="tblSort(4)">Date ⇅</th>
+                  <th onclick="tblSort(5)">Eye</th>
+                  <th>Pre VA</th>
+                  <th>Post VA</th>
+                  <th onclick="tblSort(8)">Outcome ⇅</th>
+                  <th>Complications</th>
+                  <th>Del</th>
+                </tr>
+              </thead>
+              <tbody id="rec-body"></tbody>
+            </table>
+          </div>
+          <div class="pager" id="pager"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════ IMPORT / EXPORT ═══════════ -->
+    <div class="pane" id="pane-io">
+      <div class="g2 mb16">
+        <div class="card">
+          <div class="ch"><div class="ct">📥 Import Data</div></div>
+          <div class="cb">
+            <div class="alert ai mb16">📌 First row must be a header row with matching field names.</div>
+            <div style="margin-bottom:12px">
+              <label>Select CSV or Excel file</label>
+              <input id="imp-file" type="file" accept=".csv,.xlsx"/>
+            </div>
+            <button class="btn btn-p" onclick="doImport()">📂 Import File</button>
+            <div style="margin-top:16px">
+              <div class="sh">Expected CSV Columns</div>
+              <code style="font-size:.68rem;display:block;background:var(--bg);padding:10px;border-radius:6px;color:var(--blue);line-height:1.9">
+                patientId, age, gender, surgeryType, diagnosis,<br/>date, eye, preVision, postVision, outcome,<br/>complications, followup
+              </code>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="ch"><div class="ct">📤 Export Data</div></div>
+          <div class="cb">
+            <div class="sh">Export Formats</div>
+            <div style="display:flex;flex-direction:column;gap:9px">
+              <button class="btn btn-p" onclick="expXLSX()">📗 Export as Excel (.xlsx)</button>
+              <button class="btn btn-p" style="background:var(--teal)" onclick="expCSV()">📊 Export as CSV</button>
+              <button class="btn btn-p" style="background:var(--red)" onclick="expPDF()">📄 Export Full PDF Report</button>
+              <button class="btn btn-g" onclick="dlChart('c-trend')">🖼️ Trend Chart (PNG)</button>
+              <button class="btn btn-g" onclick="dlChart('c-type')">🖼️ Type Chart (PNG)</button>
+              <button class="btn btn-g" onclick="dlChart('c-pie')">🖼️ Outcome Pie (PNG)</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="ch"><div class="ct">⚠️ Data Management</div></div>
+        <div class="cb">
+          <div class="alert aw mb16">All data is stored in your browser's localStorage. Export regularly to prevent data loss.</div>
+          <button class="btn btn-r" style="padding:8px 16px;font-size:.82rem" onclick="clearAll()">🗑️ Clear All Records</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════ STATISTICS ═══════════ -->
+    <div class="pane" id="pane-stats">
+      <div class="ytabs" id="yt-stats"></div>
+      <div class="card mb16">
+        <div class="ch"><div class="ct">📐 Descriptive Statistics</div></div>
+        <div class="cb" style="overflow-x:auto">
+          <table class="st"><thead><tr><th>Metric</th><th>Value</th><th>Interpretation</th></tr></thead>
+          <tbody id="desc-body"><tr><td colspan="3" style="text-align:center;color:var(--t3);padding:20px">Add surgery data first</td></tr></tbody></table>
+        </div>
+      </div>
+      <div class="card mb16">
+        <div class="ch">
+          <div class="ct">🧮 Inferential Statistics</div>
+          <button class="btn btn-p btn-sm" onclick="runTests()">▶ Run Tests</button>
+        </div>
+        <div class="cb" style="overflow-x:auto">
+          <table class="st"><thead><tr><th>Test</th><th>Statistic</th><th>P-Value</th><th>df</th><th>Significance</th><th>Interpretation</th></tr></thead>
+          <tbody id="inf-body"><tr><td colspan="6" style="text-align:center;color:var(--t3);padding:20px">Click "Run Tests" to calculate</td></tr></tbody></table>
+        </div>
+      </div>
+      <div class="card mb16">
+        <div class="ch"><div class="ct">📏 Confidence Intervals (95%)</div></div>
+        <div class="cb" style="overflow-x:auto">
+          <table class="st"><thead><tr><th>Parameter</th><th>Estimate</th><th>95% CI Lower</th><th>95% CI Upper</th></tr></thead>
+          <tbody id="ci-body"><tr><td colspan="4" style="text-align:center;color:var(--t3);padding:20px">No data yet</td></tr></tbody></table>
+        </div>
+      </div>
+      <div class="card">
+        <div class="ch"><div class="ct">🔬 Per Surgery Type Analysis</div></div>
+        <div class="cb" style="overflow-x:auto">
+          <table class="st"><thead><tr><th>Surgery Type</th><th>N</th><th>Success %</th><th>Mean Pre VA</th><th>Mean Post VA</th><th>Mean VA Imp.</th></tr></thead>
+          <tbody id="type-body"><tr><td colspan="6" style="text-align:center;color:var(--t3);padding:20px">No data yet</td></tr></tbody></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════ CHARTS ═══════════ -->
+    <div class="pane" id="pane-charts">
+      <div class="ytabs" id="yt-charts"></div>
+      <div class="g2 mb16">
+        <div class="card">
+          <div class="ch"><div class="ct">🥧 Success vs Failure</div><button class="btn btn-g btn-sm" onclick="dlChart('c2-pie')">⬇ PNG</button></div>
+          <div class="cb"><div class="ch-w" style="height:240px"><canvas id="c2-pie"></canvas></div></div>
+        </div>
+        <div class="card">
+          <div class="ch"><div class="ct">📊 Surgery Type Count</div><button class="btn btn-g btn-sm" onclick="dlChart('c2-type')">⬇ PNG</button></div>
+          <div class="cb"><div class="ch-w" style="height:240px"><canvas id="c2-type"></canvas></div></div>
+        </div>
+      </div>
+      <div class="g2 mb16">
+        <div class="card">
+          <div class="ch"><div class="ct">📈 Annual Success Rate Trend</div><button class="btn btn-g btn-sm" onclick="dlChart('c2-trend')">⬇ PNG</button></div>
+          <div class="cb"><div class="ch-w" style="height:210px"><canvas id="c2-trend"></canvas></div></div>
+        </div>
+        <div class="card">
+          <div class="ch"><div class="ct">🎯 Gender Distribution</div><button class="btn btn-g btn-sm" onclick="dlChart('c2-gender')">⬇ PNG</button></div>
+          <div class="cb"><div class="ch-w" style="height:210px"><canvas id="c2-gender"></canvas></div></div>
+        </div>
+      </div>
+      <div class="g2">
+        <div class="card">
+          <div class="ch"><div class="ct">📉 VA Improvement by Type</div><button class="btn btn-g btn-sm" onclick="dlChart('c2-va')">⬇ PNG</button></div>
+          <div class="cb"><div class="ch-w" style="height:210px"><canvas id="c2-va"></canvas></div></div>
+        </div>
+        <div class="card">
+          <div class="ch"><div class="ct">📊 Complication Rate by Type</div><button class="btn btn-g btn-sm" onclick="dlChart('c2-comp')">⬇ PNG</button></div>
+          <div class="cb"><div class="ch-w" style="height:210px"><canvas id="c2-comp"></canvas></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════ RESEARCH REPORT ═══════════ -->
+    <div class="pane" id="pane-research">
+      <div class="card">
+        <div class="ch">
+          <div class="ct">📝 Research Report Generator</div>
+          <div style="display:flex;gap:6px">
+            <button class="btn btn-p btn-sm" onclick="genReport()">⚡ Generate</button>
+            <button class="btn btn-p btn-sm" style="background:var(--red)" onclick="expPDF()">📄 PDF</button>
+          </div>
+        </div>
+        <div class="cb" id="report-out">
+          <div style="text-align:center;padding:40px;color:var(--t3)">
+            <div style="font-size:36px;margin-bottom:12px;opacity:.5">📄</div>
+            <p style="font-size:.85rem">Click <strong>Generate</strong> to create a publication-ready research report.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+  <footer class="footer">© Manik Roy <span id="yr"></span>. All Rights Reserved.&nbsp;|&nbsp;OphthalDash — Ophthalmology Surgical Analytics&nbsp;|&nbsp;Data stored locally in browser</footer>
+</div>
+</div>
+
+<div class="toast-wrap" id="tc"></div>
+
+<script>
+/* ══════════════════════════════════════
+   STATE & CONSTANTS
+══════════════════════════════════════ */
+let R = JSON.parse(localStorage.getItem('od_r')||'[]');
+let dyf='all', syf='all', cyf='all';
+let tblPage=1, tblSortCol=4, tblSortDir=-1;
+let CH={};
+const TYPES=['Cataract Surgery','Retinal Detachment Surgery','Vitrectomy','Glaucoma Surgery','Corneal Surgery','LASIK','Oculoplasty','Custom Procedure'];
+const PAL=['#1a6fc4','#0f9e5c','#dc2626','#d97706','#7c3aed','#0e9f8e','#e2507a','#6b7280'];
+const TABS={dashboard:['Dashboard','Surgical outcome overview'],entry:['Add Surgery','Enter new procedure record'],records:['Records','All surgery entries'],io:['Import / Export','Data management'],stats:['Statistical Analysis','Advanced metrics & tests'],charts:['Graphical Reports','Visual analytics'],research:['Research Report','Publication-ready summaries']};
+
+/* ══════════════════════════════════════
+   INIT
+══════════════════════════════════════ */
+document.getElementById('yr').textContent=new Date().getFullYear();
+document.getElementById('f-date').value=new Date().toISOString().split('T')[0];
+const saved=localStorage.getItem('od_theme')||'light';
+applyTheme(saved);
+renderAll();
+
+/* ══════════════════════════════════════
+   THEME
+══════════════════════════════════════ */
+function setTheme(t,btn){
+  applyTheme(t);
+  localStorage.setItem('od_theme',t);
+  document.querySelectorAll('.th-btn').forEach(b=>b.classList.remove('on'));
+  if(btn)btn.classList.add('on');
+}
+function applyTheme(t){
+  document.body.setAttribute('data-theme',t);
+  document.querySelectorAll('.th-btn').forEach(b=>{
+    b.classList.toggle('on',b.textContent.toLowerCase().includes(t==='light'?'☀':(t==='dark'?'🌙':'⬛')));
+  });
+  setTimeout(()=>Object.values(CH).forEach(c=>c&&c.update()),100);
+}
+
+/* ══════════════════════════════════════
+   NAV
+══════════════════════════════════════ */
+function go(tab,el){
+  document.querySelectorAll('.pane').forEach(p=>p.classList.remove('on'));
+  document.getElementById('pane-'+tab).classList.add('on');
+  document.querySelectorAll('.nit').forEach(n=>n.classList.remove('on'));
+  if(el)el.classList.add('on');
+  else document.querySelectorAll('.nit').forEach(n=>{if(n.getAttribute('onclick')?.includes("'"+tab+"'"))n.classList.add('on')});
+  const [ti,su]=TABS[tab]||['Dashboard',''];
+  document.getElementById('tbtitle').textContent=ti;
+  document.getElementById('tbsub').textContent=su;
+  if(tab==='stats')updateStats();
+  if(tab==='charts')updateCharts();
+  if(tab==='records')tblRender();
+  closeSB();
+}
+function toggleSB(){document.getElementById('sb').classList.toggle('open');document.getElementById('ov').classList.toggle('show')}
+function closeSB(){document.getElementById('sb').classList.remove('open');document.getElementById('ov').classList.remove('show')}
+
+/* ══════════════════════════════════════
+   DATA
+══════════════════════════════════════ */
+function save(){localStorage.setItem('od_r',JSON.stringify(R));document.getElementById('nbadge').textContent=R.length}
+function years(){return[...new Set(R.map(r=>r.date?r.date.substring(0,4):null).filter(Boolean))].sort()}
+function filt(y){return y==='all'?R:R.filter(r=>r.date&&r.date.startsWith(y))}
+
+/* ══════════════════════════════════════
+   ADD RECORD
+══════════════════════════════════════ */
+function addRec(){
+  const pid=document.getElementById('f-pid').value.trim();
+  const age=document.getElementById('f-age').value;
+  const gender=document.getElementById('f-gender').value;
+  const type=document.getElementById('f-type').value;
+  const date=document.getElementById('f-date').value;
+  const eye=document.getElementById('f-eye').value;
+  const out=document.getElementById('f-out').value;
+  if(!pid||!age||!gender||!type||!date||!eye||!out){toast('Please fill all required fields (*)','er');return}
+  const preV=document.getElementById('f-pre').value;
+  const postV=document.getElementById('f-post').value;
+  R.push({
+    id:Date.now(),patientId:pid,age:+age,gender,surgeryType:type,
+    diagnosis:document.getElementById('f-diag').value.trim(),
+    date,eye,
+    preVision:preV!==''?+preV:null,
+    postVision:postV!==''?+postV:null,
+    outcome:out,
+    complications:document.getElementById('f-comp').value.trim()||'None',
+    followup:document.getElementById('f-fu').value?+document.getElementById('f-fu').value:null
+  });
+  save();renderAll();clearForm();
+  toast('✅ Surgery record saved','ok');
+  go('dashboard',null);
+}
+function clearForm(){
+  ['f-pid','f-age','f-diag','f-pre','f-post','f-comp','f-fu'].forEach(id=>document.getElementById(id).value='');
+  ['f-gender','f-type','f-eye','f-out'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('f-date').value=new Date().toISOString().split('T')[0];
+}
+function delRec(i){
+  if(!confirm('Delete this record?'))return;
+  R.splice(i,1);save();renderAll();tblRender();toast('Record deleted','er');
+}
+function clearAll(){
+  if(!confirm('Delete ALL records? Cannot be undone.'))return;
+  R=[];save();renderAll();tblRender();toast('All records cleared','er');
+}
+
+/* ══════════════════════════════════════
+   RENDER ALL
+══════════════════════════════════════ */
+function renderAll(){
+  buildYearTabs();
+  updateKPIs(filt(dyf));
+  updateYearTable();
+  buildDashCharts(filt(dyf));
+  document.getElementById('nbadge').textContent=R.length;
+}
+function buildYearTabs(){
+  const yrs=years();
+  [['yt-dash','dyf','filterDash'],['yt-stats','syf','filterStats'],['yt-charts','cyf','filterCharts']].forEach(([id,v,fn])=>{
+    const el=document.getElementById(id);if(!el)return;
+    el.innerHTML='';
+    const mk=(y,label)=>{
+      const d=document.createElement('div');
+      d.className='yt'+(window[v]===y?' on':'');
+      d.textContent=label;
+      d.onclick=()=>window[fn](y,d);
+      return d;
+    };
+    el.appendChild(mk('all','All Years'));
+    yrs.forEach(y=>el.appendChild(mk(y,y)));
+  });
+}
+function filterDash(y,el){dyf=y;document.querySelectorAll('#yt-dash .yt').forEach(t=>t.classList.remove('on'));if(el)el.classList.add('on');updateKPIs(filt(y));buildDashCharts(filt(y));updateYearTable()}
+function filterStats(y,el){syf=y;document.querySelectorAll('#yt-stats .yt').forEach(t=>t.classList.remove('on'));if(el)el.classList.add('on');updateStats()}
+function filterCharts(y,el){cyf=y;document.querySelectorAll('#yt-charts .yt').forEach(t=>t.classList.remove('on'));if(el)el.classList.add('on');updateCharts()}
+
+/* ══════════════════════════════════════
+   KPI
+══════════════════════════════════════ */
+function updateKPIs(data){
+  const tot=data.length,suc=data.filter(r=>r.outcome==='Success').length;
+  const fail=tot-suc,comp=data.filter(r=>r.complications&&r.complications!=='None'&&r.complications!=='').length;
+  const sr=tot?(suc/tot*100):0,fr=tot?(fail/tot*100):0,cr=tot?(comp/tot*100):0;
+  const vd=data.filter(r=>r.preVision!=null&&r.postVision!=null);
+  const avgImp=vd.length?(vd.reduce((s,r)=>s+(r.preVision-r.postVision),0)/vd.length).toFixed(2):'—';
+  const kpis=[
+    {lbl:'Total Surgeries',val:tot,sub:'All procedures',ico:'🔪',kc:'var(--blue)',kib:'rgba(26,111,196,.1)',pct:100,pc:'var(--blue)'},
+    {lbl:'Successful',val:suc,sub:sr.toFixed(1)+'% success rate',ico:'✅',kc:'var(--green)',kib:'rgba(15,158,92,.1)',pct:sr,pc:'var(--green)'},
+    {lbl:'Failed',val:fail,sub:fr.toFixed(1)+'% failure rate',ico:'❌',kc:'var(--red)',kib:'rgba(220,38,38,.1)',pct:fr,pc:'var(--red)'},
+    {lbl:'Complications',val:comp,sub:cr.toFixed(1)+'% rate',ico:'⚠️',kc:'var(--amber)',kib:'rgba(217,119,6,.1)',pct:cr,pc:'var(--amber)'},
+    {lbl:'Avg VA Improvement',val:avgImp,sub:'LogMAR units',ico:'👁️',kc:'var(--teal)',kib:'rgba(14,159,142,.1)',pct:null},
+    {lbl:'Active Years',val:years().length,sub:'Data coverage',ico:'📅',kc:'var(--purple)',kib:'rgba(124,58,237,.1)',pct:null},
+  ];
+  document.getElementById('kpis').innerHTML=kpis.map(k=>`
+    <div class="kpi" style="--kc:${k.kc}">
+      <div class="kpi-ico" style="background:${k.kib}">${k.ico}</div>
+      <div class="kpi-lbl">${k.lbl}</div>
+      <div class="kpi-val">${k.val}</div>
+      <div class="kpi-sub">${k.sub}</div>
+      ${k.pct!==null?`<div class="pbar"><div class="pfill" style="background:${k.pc};width:${k.pct}%"></div></div>`:''}
+    </div>`).join('');
+}
+
+/* ══════════════════════════════════════
+   YEAR TABLE
+══════════════════════════════════════ */
+function updateYearTable(){
+  const yrs=years();
+  const tb=document.getElementById('yr-body');
+  if(!yrs.length){tb.innerHTML='<tr><td colspan="7" style="text-align:center;color:var(--t3);padding:20px">No data yet</td></tr>';return}
+  tb.innerHTML=yrs.map(y=>{
+    const d=filt(y),tot=d.length,suc=d.filter(r=>r.outcome==='Success').length;
+    const comp=d.filter(r=>r.complications&&r.complications!=='None'&&r.complications!=='').length;
+    const sr=(suc/tot*100).toFixed(1),cr=(comp/tot*100).toFixed(1);
+    const vd=d.filter(r=>r.preVision!=null&&r.postVision!=null);
+    const vi=vd.length?(vd.reduce((s,r)=>s+(r.preVision-r.postVision),0)/vd.length).toFixed(2):'—';
+    return`<tr><td><strong>${y}</strong></td><td class="sv">${tot}</td><td><span class="bs">${suc}</span></td><td><span class="bf">${tot-suc}</span></td><td class="sv">${sr}%</td><td class="sv">${cr}%</td><td class="sv">${vi}</td></tr>`;
+  }).join('');
+}
+
+/* ══════════════════════════════════════
+   PURE-JS TABLE (Records tab)
+══════════════════════════════════════ */
+function tblRender(){
+  const q=(document.getElementById('tbl-q')?.value||'').toLowerCase();
+  const sz=+(document.getElementById('tbl-sz')?.value||10);
+  let rows=[...R];
+  if(q)rows=rows.filter(r=>Object.values(r).join(' ').toLowerCase().includes(q));
+  rows.sort((a,b)=>{
+    const cols=['patientId','age','gender','surgeryType','date','eye','preVision','postVision','outcome'];
+    const k=cols[tblSortCol];
+    const va=a[k]??'',vb=b[k]??'';
+    return(va<vb?-1:va>vb?1:0)*tblSortDir;
+  });
+  const total=rows.length,pages=Math.max(1,Math.ceil(total/sz));
+  if(tblPage>pages)tblPage=1;
+  const slice=rows.slice((tblPage-1)*sz,tblPage*sz);
+  const globalIdx=r=>R.findIndex(x=>x.id===r.id);
+  document.getElementById('tbl-info').textContent=total?`${(tblPage-1)*sz+1}–${Math.min(tblPage*sz,total)} of ${total}`:'No records';
+  document.getElementById('rec-body').innerHTML=slice.map(r=>`
+    <tr>
+      <td>${r.patientId||'—'}</td><td>${r.age||'—'}</td><td>${r.gender||'—'}</td>
+      <td>${r.surgeryType||'—'}</td><td>${r.date||'—'}</td><td>${r.eye||'—'}</td>
+      <td>${r.preVision??'—'}</td><td>${r.postVision??'—'}</td>
+      <td>${r.outcome==='Success'?'<span class="bs">✓ Success</span>':'<span class="bf">✗ Failure</span>'}</td>
+      <td>${r.complications&&r.complications!=='None'&&r.complications!==''?`<span class="bc">${r.complications}</span>`:'<span style="color:var(--t3)">None</span>'}</td>
+      <td><button class="btn btn-r" onclick="delRec(${globalIdx(r)})">🗑</button></td>
+    </tr>`).join('')||'<tr><td colspan="11" style="text-align:center;color:var(--t3);padding:20px">No records found</td></tr>';
+  // pager
+  const p=document.getElementById('pager');
+  if(pages<=1){p.innerHTML='';return}
+  let pg='';
+  if(tblPage>1)pg+=`<button class="pg-btn" onclick="tblPage=${tblPage-1};tblRender()">‹</button>`;
+  for(let i=Math.max(1,tblPage-2);i<=Math.min(pages,tblPage+2);i++)
+    pg+=`<button class="pg-btn${i===tblPage?' on':''}" onclick="tblPage=${i};tblRender()">${i}</button>`;
+  if(tblPage<pages)pg+=`<button class="pg-btn" onclick="tblPage=${tblPage+1};tblRender()">›</button>`;
+  p.innerHTML=pg;
+}
+function tblSort(col){if(tblSortCol===col)tblSortDir*=-1;else{tblSortCol=col;tblSortDir=-1}tblPage=1;tblRender()}
+
+/* ══════════════════════════════════════
+   STATISTICS
+══════════════════════════════════════ */
+const avg=a=>a.reduce((s,v)=>s+v,0)/a.length;
+const med=a=>{const s=[...a].sort((x,y)=>x-y),m=Math.floor(s.length/2);return s.length%2?s[m]:(s[m-1]+s[m])/2};
+const sd=a=>{const m=avg(a);return Math.sqrt(a.reduce((s,v)=>s+(v-m)**2,0)/(a.length-1))};
+function ciProp(x,n,z=1.96){const p=x/n,se=Math.sqrt(p*(1-p)/n);return{lo:Math.max(0,p-z*se),hi:Math.min(1,p+z*se)}}
+function ciMean(arr,z=1.96){const m=avg(arr),s=sd(arr),n=arr.length,me=z*s/Math.sqrt(n);return{lo:m-me,hi:m+me}}
+function welchT(a,b){
+  if(a.length<2||b.length<2)return{t:null,p:null,df:null};
+  const ma=avg(a),mb=avg(b),sa=sd(a),sb=sd(b),na=a.length,nb=b.length;
+  const se=Math.sqrt(sa*sa/na+sb*sb/nb);if(se===0)return{t:0,p:1,df:na+nb-2};
+  const t=(ma-mb)/se;
+  const df=Math.floor((sa*sa/na+sb*sb/nb)**2/((sa*sa/na)**2/(na-1)+(sb*sb/nb)**2/(nb-1)));
+  const p=2*(1-tCDF(Math.abs(t),df));
+  return{t:+t.toFixed(4),p:+p.toFixed(4),df};
+}
+function tCDF(t,df){
+  // Hill (1970) approximation
+  let p,x=df/(df+t*t);
+  if(df===1)return 1-Math.atan(t)/Math.PI;
+  if(df===2)return 1-t/Math.sqrt(2+t*t)/1;
+  let a=0.5,b=a,z=0;
+  for(let j=2;j<=df;j+=2){a*=(j-1)/j;if(j===df)b=a}
+  if(df%2===1){b=2/Math.PI*(Math.atan(t/Math.sqrt(df))+0);for(let j=1;j<df;j+=2)b+=a*(t/Math.sqrt(df))*Math.pow(1+t*t/df,-j/2)}
+  return Math.max(0,Math.min(1,1-b/2));
+}
+function chiTest(suc,fail,bench=0.85){
+  const tot=suc+fail,es=tot*bench,ef=tot*(1-bench);
+  if(es<5||ef<5)return{chi:null,p:null,df:1};
+  const chi=(suc-es)**2/es+(fail-ef)**2/ef;
+  const p=Math.exp(-chi/2);
+  return{chi:+chi.toFixed(4),p:+p.toFixed(4),df:1};
+}
+
+function updateStats(){
+  const data=filt(syf);
+  const db=document.getElementById('desc-body'),ib=document.getElementById('inf-body'),cb=document.getElementById('ci-body'),tb=document.getElementById('type-body');
+  if(!data.length){
+    [db,ib,cb,tb].forEach(b=>b.innerHTML=`<tr><td colspan="6" style="text-align:center;color:var(--t3);padding:20px">Add data first</td></tr>`);
+    return;
+  }
+  const tot=data.length,suc=data.filter(r=>r.outcome==='Success').length,fail=tot-suc;
+  const comp=data.filter(r=>r.complications&&r.complications!=='None'&&r.complications!=='').length;
+  const sr=(suc/tot*100),fr=(fail/tot*100),cr=(comp/tot*100);
+  const ages=data.map(r=>r.age).filter(Boolean);
+  const vd=data.filter(r=>r.preVision!=null&&r.postVision!=null);
+  const imps=vd.map(r=>r.preVision-r.postVision);
+  const rows=[
+    ['Total Surgeries',tot,'Sample size'],
+    ['Success Rate',sr.toFixed(2)+'%',+sr>=80?'✅ Good outcome':+sr>=60?'⚠️ Moderate':'❌ Review needed'],
+    ['Failure Rate',fr.toFixed(2)+'%',+fr<20?'✅ Acceptable':'⚠️ High failure rate'],
+    ['Complication Rate',cr.toFixed(2)+'%',+cr<15?'✅ Acceptable':'⚠️ Review protocols'],
+    ...(ages.length>=2?[['Mean Age (years)',avg(ages).toFixed(1),'Average patient age'],['Median Age (years)',med(ages).toFixed(1),'Central tendency'],['Age SD',sd(ages).toFixed(2),'Spread of ages']]:[]),
+    ...(imps.length>=2?[['Mean VA Improvement (LogMAR)',avg(imps).toFixed(3),avg(imps)>0?'✅ Positive improvement':'❌ No improvement'],['Median VA Improvement',med(imps).toFixed(3),'Central tendency'],['VA Improvement SD',sd(imps).toFixed(3),'Variability'],['Mean Pre-op VA',avg(vd.map(r=>r.preVision)).toFixed(3),'Baseline acuity'],['Mean Post-op VA',avg(vd.map(r=>r.postVision)).toFixed(3),'Post-treatment acuity']]:[]),
+  ];
+  db.innerHTML=rows.map(([m,v,i])=>`<tr><td>${m}</td><td class="sv">${v}</td><td style="font-size:.78rem;color:var(--t2)">${i}</td></tr>`).join('');
+  // CI
+  const cis=[];
+  if(tot>=5){
+    const c=ciProp(suc,tot);cis.push(['Success Rate',(sr).toFixed(1)+'%',(c.lo*100).toFixed(1)+'%',(c.hi*100).toFixed(1)+'%']);
+    const c2=ciProp(comp,tot);cis.push(['Complication Rate',cr.toFixed(1)+'%',(c2.lo*100).toFixed(1)+'%',(c2.hi*100).toFixed(1)+'%']);
+  }
+  if(ages.length>=2){const c=ciMean(ages);cis.push(['Mean Age',avg(ages).toFixed(1)+'y',c.lo.toFixed(1)+'y',c.hi.toFixed(1)+'y'])}
+  if(imps.length>=2){const c=ciMean(imps);cis.push(['Mean VA Improvement',avg(imps).toFixed(3),c.lo.toFixed(3),c.hi.toFixed(3)])}
+  cb.innerHTML=cis.length?cis.map(([p,e,lo,hi])=>`<tr><td>${p}</td><td class="sv">${e}</td><td class="sv">${lo}</td><td class="sv">${hi}</td></tr>`).join(''):'<tr><td colspan="4" style="text-align:center;color:var(--t3);padding:16px">Need ≥5 records for CIs</td></tr>';
+  // Per type
+  tb.innerHTML=TYPES.map(t=>{
+    const td=data.filter(r=>r.surgeryType===t);if(!td.length)return'';
+    const ts=td.filter(r=>r.outcome==='Success').length;
+    const tvd=td.filter(r=>r.preVision!=null&&r.postVision!=null);
+    return`<tr><td><strong>${t}</strong></td><td>${td.length}</td><td class="sv">${(ts/td.length*100).toFixed(1)}%</td><td>${tvd.length?avg(tvd.map(r=>r.preVision)).toFixed(3):'—'}</td><td>${tvd.length?avg(tvd.map(r=>r.postVision)).toFixed(3):'—'}</td><td class="sv">${tvd.length?avg(tvd.map(r=>r.preVision-r.postVision)).toFixed(3):'—'}</td></tr>`;
+  }).filter(Boolean).join('')||'<tr><td colspan="6" style="text-align:center;color:var(--t3);padding:16px">No data</td></tr>';
+  // Don't auto-run inferential (user clicks button)
+}
+
+function runTests(){
+  const data=filt(syf);
+  const ib=document.getElementById('inf-body');
+  if(data.length<5){ib.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--t3);padding:20px">Need ≥5 records to run tests</td></tr>';return}
+  const suc=data.filter(r=>r.outcome==='Success'),fail=data.filter(r=>r.outcome==='Failure');
+  const rows=[];
+  // t-test pre vs post VA
+  const pre=data.filter(r=>r.preVision!=null).map(r=>r.preVision);
+  const post=data.filter(r=>r.postVision!=null).map(r=>r.postVision);
+  if(pre.length>=2&&post.length>=2){
+    const tt=welchT(pre,post);const sig=tt.p!=null&&tt.p<0.05;
+    rows.push(["Student's t-test (Pre vs Post VA)",tt.t??'N/A',tt.p??'N/A',tt.df??'N/A',tt.p!=null?`<span class="sig ${sig?'sig-y':'sig-n'}">${sig?'p < 0.05 ✓':'p ≥ 0.05'}</span>`:'—',sig?'VA significantly improved post-surgery':'No significant VA difference detected']);
+  }
+  // t-test age by outcome
+  const aS=suc.map(r=>r.age).filter(Boolean),aF=fail.map(r=>r.age).filter(Boolean);
+  if(aS.length>=2&&aF.length>=2){
+    const tt=welchT(aS,aF);const sig=tt.p!=null&&tt.p<0.05;
+    rows.push(['t-test: Age (Success vs Failure)',tt.t??'N/A',tt.p??'N/A',tt.df??'N/A',tt.p!=null?`<span class="sig ${sig?'sig-y':'sig-n'}">${sig?'p < 0.05 ✓':'p ≥ 0.05'}</span>`:'—',sig?'Age significantly differs between groups':'No significant age difference between groups']);
+  }
+  // Chi-square vs 85% benchmark
+  const chi=chiTest(suc.length,fail.length);
+  if(chi.chi!=null){
+    const sig=chi.p<0.05;
+    rows.push(['Chi-square (vs 85% benchmark)',chi.chi,chi.p,chi.df,`<span class="sig ${sig?'sig-y':'sig-n'}">${sig?'p < 0.05 ✓':'p ≥ 0.05'}</span>`,sig?'Success rate significantly deviates from 85% benchmark':'Success rate not significantly different from benchmark']);
+  }
+  ib.innerHTML=rows.length?rows.map(([t,st,p,df,sig,interp])=>`<tr><td><strong>${t}</strong></td><td class="sv">${st}</td><td class="sv">${p}</td><td>${df}</td><td>${sig}</td><td style="font-size:.76rem;color:var(--t2)">${interp}</td></tr>`).join(''):'<tr><td colspan="6" style="text-align:center;color:var(--t3);padding:20px">Insufficient data</td></tr>';
+  toast('✅ Statistical tests completed','ok');
+}
+
+/* ══════════════════════════════════════
+   CHARTS (no jQuery, pure Chart.js)
+══════════════════════════════════════ */
+function cc(){ // chart colors
+  const t=document.body.getAttribute('data-theme');
+  return{grid:t==='light'?'rgba(0,0,0,.06)':'rgba(255,255,255,.06)',text:t==='light'?'#4a5f7a':'#8aabc8'};
+}
+function mk(id,cfg){
+  if(CH[id]){CH[id].destroy();CH[id]=null}
+  const el=document.getElementById(id);if(!el)return;
+  const c=cc();
+  cfg.options=cfg.options||{};
+  cfg.options.responsive=true;cfg.options.maintainAspectRatio=false;
+  cfg.options.plugins=cfg.options.plugins||{};
+  cfg.options.plugins.legend=cfg.options.plugins.legend||{labels:{color:c.text,font:{family:'Inter',size:11}}};
+  if(cfg.options.scales)Object.values(cfg.options.scales).forEach(s=>{s.grid=s.grid||{};s.grid.color=c.grid;s.ticks=s.ticks||{};s.ticks.color=c.text});
+  CH[id]=new Chart(el,cfg);
+}
+function buildDashCharts(data){
+  const s=data.filter(r=>r.outcome==='Success').length,f=data.length-s;
+  const comp=data.filter(r=>r.complications&&r.complications!=='None'&&r.complications!=='').length;
+  mk('c-pie',{type:'doughnut',data:{labels:['Success','Failure','Complications'],datasets:[{data:[s,f,comp],backgroundColor:['#0f9e5c','#dc2626','#d97706'],borderWidth:0,hoverOffset:5}]},options:{plugins:{legend:{position:'bottom'}},cutout:'62%'}});
+  const tc=TYPES.map(t=>data.filter(r=>r.surgeryType===t).length);
+  mk('c-type',{type:'bar',data:{labels:TYPES.map(t=>t.replace(' Surgery','').replace(' Procedure','').replace('Retinal Detachment','Ret.Det.')),datasets:[{label:'Count',data:tc,backgroundColor:PAL,borderRadius:4,borderSkipped:false}]},options:{plugins:{legend:{display:false}},scales:{x:{},y:{beginAtZero:true}}}});
+  const yrs=years();
+  mk('c-trend',{type:'line',data:{labels:yrs,datasets:[
+    {label:'Success Rate %',data:yrs.map(y=>{const d=filt(y);return d.length?(d.filter(r=>r.outcome==='Success').length/d.length*100).toFixed(1):0}),borderColor:'#1a6fc4',backgroundColor:'rgba(26,111,196,.1)',fill:true,tension:.4,pointRadius:5},
+    {label:'Total Cases',data:yrs.map(y=>filt(y).length),borderColor:'#0f9e5c',backgroundColor:'transparent',borderDash:[4,4],tension:.4,pointRadius:4,yAxisID:'y2'}
+  ]},options:{scales:{x:{},y:{beginAtZero:false,max:100,title:{display:true,text:'Success %'}},y2:{position:'right',beginAtZero:true,title:{display:true,text:'Cases'},grid:{drawOnChartArea:false}}}}});
+  const scatter=data.filter(r=>r.age&&r.preVision!=null&&r.postVision!=null).map(r=>({x:r.age,y:+(r.preVision-r.postVision).toFixed(3)}));
+  mk('c-scatter',{type:'scatter',data:{datasets:[{label:'Age vs VA Imp.',data:scatter,backgroundColor:'rgba(26,111,196,.5)',pointRadius:5}]},options:{scales:{x:{title:{display:true,text:'Age (years)'}},y:{title:{display:true,text:'VA Improvement (LogMAR)'}}}}});
+}
+function updateCharts(){
+  const data=filt(cyf);
+  const s=data.filter(r=>r.outcome==='Success').length,f=data.length-s;
+  mk('c2-pie',{type:'pie',data:{labels:['Success','Failure'],datasets:[{data:[s,f],backgroundColor:['#0f9e5c','#dc2626'],borderWidth:0}]},options:{plugins:{legend:{position:'right'}}}});
+  const tc=TYPES.map(t=>data.filter(r=>r.surgeryType===t).length);
+  const ts=TYPES.map(t=>data.filter(r=>r.surgeryType===t&&r.outcome==='Success').length);
+  mk('c2-type',{type:'bar',data:{labels:TYPES.map(t=>t.replace(' Surgery','').replace(' Procedure','').replace('Retinal Detachment','Ret.Det.')),datasets:[{label:'Total',data:tc,backgroundColor:'rgba(26,111,196,.45)',borderRadius:4},{label:'Success',data:ts,backgroundColor:'rgba(15,158,92,.65)',borderRadius:4}]},options:{scales:{x:{},y:{beginAtZero:true}}}});
+  const yrs=years();
+  mk('c2-trend',{type:'line',data:{labels:yrs,datasets:[{label:'Success Rate %',data:yrs.map(y=>{const d=filt(y);return d.length?+(d.filter(r=>r.outcome==='Success').length/d.length*100).toFixed(1):0}),borderColor:'#1a6fc4',backgroundColor:'rgba(26,111,196,.1)',fill:true,tension:.4,pointRadius:5}]},options:{scales:{x:{},y:{min:0,max:100}}}});
+  const gc=['Male','Female','Other'].map(g=>data.filter(r=>r.gender===g).length);
+  mk('c2-gender',{type:'doughnut',data:{labels:['Male','Female','Other'],datasets:[{data:gc,backgroundColor:['#1a6fc4','#e2507a','#7c3aed'],borderWidth:0}]},options:{plugins:{legend:{position:'right'}},cutout:'50%'}});
+  const vaImp=TYPES.map(t=>{const td=data.filter(r=>r.surgeryType===t&&r.preVision!=null&&r.postVision!=null);return td.length?+avg(td.map(r=>r.preVision-r.postVision)).toFixed(3):0});
+  mk('c2-va',{type:'bar',data:{labels:TYPES.map(t=>t.replace(' Surgery','').replace(' Procedure','').replace('Retinal Detachment','Ret.Det.')),datasets:[{label:'Mean VA Imp.',data:vaImp,backgroundColor:PAL,borderRadius:4}]},options:{plugins:{legend:{display:false}},scales:{x:{},y:{beginAtZero:true,title:{display:true,text:'LogMAR'}}}}});
+  const cr=TYPES.map(t=>{const td=data.filter(r=>r.surgeryType===t);return td.length?+(td.filter(r=>r.complications&&r.complications!=='None'&&r.complications!=='').length/td.length*100).toFixed(1):0});
+  mk('c2-comp',{type:'bar',data:{labels:TYPES.map(t=>t.replace(' Surgery','').replace(' Procedure','').replace('Retinal Detachment','Ret.Det.')),datasets:[{label:'Complication %',data:cr,backgroundColor:'#d97706',borderRadius:4}]},options:{plugins:{legend:{display:false}},scales:{x:{},y:{beginAtZero:true,max:100}}}});
+}
+function dlChart(id){
+  const c=document.getElementById(id);if(!c){toast('Chart not found','er');return}
+  const a=document.createElement('a');a.download=`ophthaldash_${id}.png`;a.href=c.toDataURL('image/png',1);a.click();
+  toast('✅ Chart saved as PNG','ok');
+}
+
+/* ══════════════════════════════════════
+   RESEARCH REPORT
+══════════════════════════════════════ */
+function genReport(){
+  if(!R.length){toast('No data to generate report','er');return}
+  const tot=R.length,suc=R.filter(r=>r.outcome==='Success').length,fail=tot-suc;
+  const comp=R.filter(r=>r.complications&&r.complications!=='None'&&r.complications!=='').length;
+  const sr=(suc/tot*100).toFixed(1);
+  const yrs=years();
+  const vd=R.filter(r=>r.preVision!=null&&r.postVision!=null);
+  const imps=vd.map(r=>r.preVision-r.postVision);
+  const ages=R.map(r=>r.age).filter(Boolean);
+  const avgAge=ages.length?avg(ages).toFixed(1):null;
+  const sdAge=ages.length>=2?sd(ages).toFixed(1):null;
+  const avgImp=imps.length?avg(imps).toFixed(3):null;
+  const avgPre=vd.length?avg(vd.map(r=>r.preVision)).toFixed(3):null;
+  const avgPost=vd.length?avg(vd.map(r=>r.postVision)).toFixed(3):null;
+  const top=TYPES.map(t=>({t,n:R.filter(r=>r.surgeryType===t).length})).sort((a,b)=>b.n-a.n)[0];
+  document.getElementById('report-out').innerHTML=`
+  <div class="rs"><h5>📌 Methods — Statistical Analysis</h5>
+  <p>A retrospective cross-sectional analysis was performed on ${tot} ophthalmic surgical procedures recorded between ${yrs[0]||'—'} and ${yrs[yrs.length-1]||'—'}.
+  Surgical outcomes were classified as <em>success</em> or <em>failure</em> based on post-operative clinical assessment. Visual acuity was measured in LogMAR units pre- and post-operatively.
+  Descriptive statistics including mean, median, and standard deviation were calculated for all continuous variables.
+  Differences in visual acuity before and after surgery were evaluated using Welch's t-test.
+  Association between patient age and surgical outcome was assessed using an independent samples t-test.
+  The observed success rate was compared against a benchmark of 85% using the Chi-square goodness-of-fit test.
+  A P-value less than 0.05 was considered statistically significant. Confidence intervals were calculated at the 95% level.
+  All analyses were performed using OphthalDash v2.0 (browser-based analytics, ${new Date().getFullYear()}).</p></div>
+  <div class="rs"><h5>📊 Results</h5>
+  <p>A total of <strong>${tot}</strong> ophthalmic procedures were analyzed.
+  ${avgAge?`The mean patient age was ${avgAge} ± ${sdAge} years.`:''}
+  The overall surgical success rate was <strong>${sr}%</strong> (${suc}/${tot} cases).
+  Surgical failure was recorded in <strong>${fail}</strong> cases (${(fail/tot*100).toFixed(1)}%).
+  Post-operative complications were noted in <strong>${comp}</strong> cases (complication rate: ${(comp/tot*100).toFixed(1)}%).
+  The most frequently performed procedure was <strong>${top?.t||'—'}</strong> (n=${top?.n||0}).</p>
+  ${vd.length?`<p>Visual acuity data were available for ${vd.length} cases. Mean pre-operative LogMAR was ${avgPre} and mean post-operative LogMAR was ${avgPost}, representing a mean improvement of <strong>${avgImp} LogMAR units</strong>.</p>`:''}
+  <p>Year-wise summary:</p><ul>${yrs.map(y=>{const d=filt(y);const ysr=d.length?(d.filter(r=>r.outcome==='Success').length/d.length*100).toFixed(1):0;return`<li>${y}: ${d.length} cases, success rate ${ysr}%</li>`}).join('')}</ul></div>
+  <div class="rs"><h5>📐 Statistical Results</h5>
+  <p>Statistical analysis was performed using Student's t-test and the Chi-square test.
+  ${vd.length>=4?`A Welch's t-test comparing pre- and post-operative visual acuity was conducted (n=${vd.length}).`:''} 
+  ${suc>5&&fail>5?`An independent samples t-test was used to compare patient age between success (n=${suc}) and failure (n=${fail}) groups.`:''}
+  The observed success rate of ${sr}% was evaluated against a benchmark of 85% using Chi-square goodness-of-fit. Full statistical output is available in the Statistics module.</p></div>
+  <div class="rs"><h5>✅ Conclusion</h5>
+  <p>This study analyzed ${tot} ophthalmic surgical procedures with an overall success rate of ${sr}%.
+  ${+sr>=80?'The outcomes demonstrate favourable results meeting clinical standards.':+sr>=60?'Outcomes indicate moderate performance; systematic review of technique and patient selection is recommended.':'Outcomes fall below acceptable benchmarks; immediate review of surgical protocols is strongly recommended.'}
+  ${avgImp?`Visual acuity demonstrated a mean improvement of ${avgImp} LogMAR units, indicating meaningful functional benefit.`:''}
+  The complication rate of ${(comp/tot*100).toFixed(1)}% ${comp/tot<0.10?'is within acceptable limits.':'warrants further clinical review.'}
+  Continuous data collection and prospective audit are recommended to improve outcomes.</p></div>
+  <div class="rs"><h5>📚 Suggested Citation</h5>
+  <p style="font-style:italic;font-size:.78rem">Retrospective Analysis of Ophthalmic Surgical Outcomes (${yrs[0]}–${yrs[yrs.length-1]}). Generated: ${new Date().toLocaleDateString('en-IN',{year:'numeric',month:'long',day:'numeric'})}. OphthalDash v2.0 — Browser-based Surgical Analytics. © Manik Roy ${new Date().getFullYear()}.</p></div>`;
+  toast('📄 Research report generated','ok');
+}
+
+/* ══════════════════════════════════════
+   EXPORT / IMPORT
+══════════════════════════════════════ */
+function expCSV(){
+  if(!R.length){toast('No records to export','er');return}
+  const hdr=['patientId','age','gender','surgeryType','diagnosis','date','eye','preVision','postVision','outcome','complications','followup'];
+  const csv=[hdr.join(','),...R.map(r=>hdr.map(h=>JSON.stringify(r[h]??'')).join(','))].join('\n');
+  dl('ophthaldash_records.csv',csv,'text/csv');
+  toast('✅ CSV exported','ok');
+}
+function expXLSX(){
+  if(!R.length){toast('No records','er');return}
+  const ws=XLSX.utils.json_to_sheet(R);
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'Surgeries');
+  const tot=R.length,suc=R.filter(r=>r.outcome==='Success').length;
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet([
+    {Metric:'Total',Value:tot},{Metric:'Successful',Value:suc},
+    {Metric:'Failed',Value:tot-suc},{Metric:'Success Rate',Value:(suc/tot*100).toFixed(2)+'%'}
+  ]),'Summary');
+  XLSX.writeFile(wb,'ophthaldash_report.xlsx');
+  toast('✅ Excel exported','ok');
+}
+async function expPDF(){
+  if(!R.length){toast('No data','er');return}
+  toast('📄 Generating PDF…');
+  const{jsPDF}=window.jspdf;
+  const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+  const tot=R.length,suc=R.filter(r=>r.outcome==='Success').length;
+  const fail=tot-suc,comp=R.filter(r=>r.complications&&r.complications!=='None'&&r.complications!=='').length;
+  const sr=(suc/tot*100).toFixed(1);const yrs=years();
+  doc.setFillColor(26,111,196);doc.rect(0,0,210,28,'F');
+  doc.setTextColor(255,255,255);doc.setFontSize(15);doc.setFont('helvetica','bold');
+  doc.text('OphthalDash — Surgical Outcome Analytics',14,12);
+  doc.setFontSize(8);doc.setFont('helvetica','normal');
+  doc.text(`Generated: ${new Date().toLocaleString()} | © Manik Roy ${new Date().getFullYear()}`,14,21);
+  let y=38;
+  doc.setTextColor(13,27,46);doc.setFontSize(11);doc.setFont('helvetica','bold');
+  doc.text('EXECUTIVE SUMMARY',14,y);y+=7;
+  doc.setFont('helvetica','normal');doc.setFontSize(9);
+  [`Total Surgeries: ${tot}`,`Successful: ${suc} (${sr}%)`,`Failed: ${fail} (${(fail/tot*100).toFixed(1)}%)`,`Complications: ${comp} (${(comp/tot*100).toFixed(1)}%)`,`Data: ${yrs.join(', ')||'—'}`].forEach(l=>{doc.text(l,14,y);y+=6});
+  y+=4;doc.setFont('helvetica','bold');doc.setFontSize(11);doc.text('YEAR-WISE PERFORMANCE',14,y);y+=7;
+  doc.setFontSize(8);doc.setFillColor(240,244,248);doc.rect(14,y-5,182,7,'F');doc.setFont('helvetica','bold');
+  let cx=14;
+  [['Year',18],['Total',18],['Successful',24],['Failed',18],['Success%',26],['Comp%',24]].forEach(([h,w])=>{doc.text(h,cx+1,y);cx+=w});
+  y+=4;doc.setFont('helvetica','normal');
+  yrs.forEach(yr=>{
+    const d=filt(yr),ys=d.filter(r=>r.outcome==='Success').length;
+    const yc=d.filter(r=>r.complications&&r.complications!=='None'&&r.complications!=='').length;
+    const row=[yr,d.length,ys,d.length-ys,(ys/d.length*100).toFixed(1)+'%',(yc/d.length*100).toFixed(1)+'%'];
+    cx=14;[18,18,24,18,26,24].forEach((w,i)=>{doc.text(String(row[i]),cx+1,y);cx+=w});y+=6;
+  });
+  y+=6;doc.setFont('helvetica','bold');doc.setFontSize(11);doc.text('RECENT RECORDS',14,y);y+=7;
+  doc.setFontSize(8);doc.setFillColor(240,244,248);doc.rect(14,y-5,182,7,'F');doc.setFont('helvetica','bold');
+  cx=14;[['Patient ID',36],['Age',15],['Surgery Type',55],['Date',26],['Outcome',24]].forEach(([h,w])=>{doc.text(h,cx+1,y);cx+=w});
+  y+=4;doc.setFont('helvetica','normal');
+  R.slice(-20).reverse().forEach(r=>{
+    if(y>272){doc.addPage();y=20}
+    const row=[r.patientId||'—',r.age||'—',(r.surgeryType||'—').substring(0,22),r.date||'—',r.outcome||'—'];
+    cx=14;[36,15,55,26,24].forEach((w,i)=>{doc.text(String(row[i]),cx+1,y);cx+=w});y+=5;
+  });
+  for(let i=1;i<=doc.internal.getNumberOfPages();i++){
+    doc.setPage(i);doc.setFontSize(7);doc.setTextColor(150);
+    doc.text(`OphthalDash © Manik Roy ${new Date().getFullYear()} | Page ${i}/${doc.internal.getNumberOfPages()}`,14,290);
+  }
+  doc.save('ophthaldash_report.pdf');
+  toast('✅ PDF exported','ok');
+}
+function dl(name,content,type){
+  const b=new Blob([content],{type}),u=URL.createObjectURL(b),a=document.createElement('a');
+  a.href=u;a.download=name;a.click();URL.revokeObjectURL(u);
+}
+function doImport(){
+  const file=document.getElementById('imp-file').files[0];
+  if(!file){toast('Select a file first','er');return}
+  if(file.name.endsWith('.csv')){const r=new FileReader();r.onload=e=>parseCSV(e.target.result);r.readAsText(file)}
+  else if(file.name.endsWith('.xlsx')){const r=new FileReader();r.onload=e=>{const wb=XLSX.read(e.target.result,{type:'array'});importRows(XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]))};r.readAsArrayBuffer(file)}
+  else toast('Unsupported format','er');
+}
+function parseCSV(txt){
+  const lines=txt.trim().split('\n'),hdrs=lines[0].split(',').map(h=>h.trim().replace(/"/g,''));
+  importRows(lines.slice(1).map(l=>{const vals=l.split(',').map(v=>v.trim().replace(/"/g,''));const o={};hdrs.forEach((h,i)=>o[h]=vals[i]||'');return o}));
+}
+function importRows(rows){
+  let n=0;
+  rows.forEach(r=>{
+    const pid=r.patientId||r['Patient ID']||r['patient_id']||'';if(!pid)return;
+    R.push({id:Date.now()+n,patientId:pid,age:+r.age||0,gender:r.gender||'',surgeryType:r.surgeryType||r['Surgery Type']||'',diagnosis:r.diagnosis||'',date:r.date||r['Date']||'',eye:r.eye||'',preVision:parseFloat(r.preVision||r['Pre Vision']||'')||null,postVision:parseFloat(r.postVision||r['Post Vision']||'')||null,outcome:r.outcome||'',complications:r.complications||'None',followup:+r.followup||null});n++;
+  });
+  save();renderAll();tblRender();toast(`✅ ${n} records imported`,'ok');
+}
+
+/* ══════════════════════════════════════
+   SAMPLE DATA
+══════════════════════════════════════ */
+function loadSample(){
+  if(R.length){toast('Clear existing data first','er');return}
+  const diags=['Nuclear Cataract','Post. Vitreous Detachment','POAG','Keratoconus','Myopia','Orbital Fracture','Macular Hole'];
+  const eyes=['Right (OD)','Left (OS)','Both (OU)'];const gens=['Male','Female','Male','Male','Female'];
+  for(let i=0;i<45;i++){
+    const preV=+(Math.random()*1.4+0.3).toFixed(2);
+    const ok=Math.random()>0.18;
+    const imp=ok?Math.random()*.9+.1:Math.random()*.2-.1;
+    const postV=+Math.max(0,preV-imp).toFixed(2);
+    const yr=2022+Math.floor(Math.random()*3);
+    const mo=String(Math.floor(Math.random()*12)+1).padStart(2,'0');
+    const dy=String(Math.floor(Math.random()*28)+1).padStart(2,'0');
+    R.push({id:Date.now()+i,patientId:`PT-${yr}-${String(i+1).padStart(3,'0')}`,age:Math.floor(Math.random()*60)+18,gender:gens[i%5],surgeryType:TYPES[Math.floor(Math.random()*TYPES.length)],diagnosis:diags[Math.floor(Math.random()*diags.length)],date:`${yr}-${mo}-${dy}`,eye:eyes[Math.floor(Math.random()*eyes.length)],preVision:preV,postVision:postV,outcome:ok?'Success':'Failure',complications:Math.random()>.8?['Corneal Edema','IOP Spike','PCR'][Math.floor(Math.random()*3)]:'None',followup:Math.floor(Math.random()*12)+1});
+  }
+  save();renderAll();tblRender();toast('✅ 45 sample records loaded','ok');
+}
+
+/* ══════════════════════════════════════
+   TOAST
+══════════════════════════════════════ */
+function toast(msg,type=''){
+  const el=document.createElement('div');el.className=`toast ${type}`;
+  el.innerHTML=`<span>${type==='ok'?'✅':type==='er'?'❌':'ℹ️'}</span><span>${msg}</span>`;
+  const tc=document.getElementById('tc');tc.appendChild(el);
+  setTimeout(()=>{el.style.animation='tOut .3s ease forwards';setTimeout(()=>el.remove(),300)},3000);
+}
+</script>
+
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js')
+      .then(reg => console.log('[SW] Registered, scope:', reg.scope))
+      .catch(err => console.warn('[SW] Registration failed:', err));
+  });
+}
+// PWA install prompt
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredPrompt = e;
+  // Show install button if exists
+  const btn = document.getElementById('pwa-install-btn');
+  if (btn) btn.style.display = 'flex';
+});
+window.addEventListener('appinstalled', () => {
+  deferredPrompt = null;
+  const btn = document.getElementById('pwa-install-btn');
+  if (btn) btn.style.display = 'none';
+});
+function installPWA() {
+  if (deferredPrompt) { deferredPrompt.prompt(); deferredPrompt.userChoice.then(() => { deferredPrompt = null; }); }
+}
+</script>
+</body>
+</html>
