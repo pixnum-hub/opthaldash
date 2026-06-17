@@ -2,29 +2,28 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
-<meta name="theme-color" content="#1a6fc4"/>
-<meta name="mobile-web-app-capable" content="yes"/>
-<meta name="apple-mobile-web-app-capable" content="yes"/>
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
-<meta name="apple-mobile-web-app-title" content="OphthalDash"/>
-<meta name="application-name" content="OphthalDash"/>
-<meta name="msapplication-TileColor" content="#1a6fc4"/>
-<meta name="msapplication-TileImage" content="icon-144x144.png"/>
-<link rel="manifest" href="manifest.json"/>
-<link rel="icon" type="image/png" sizes="32x32" href="icon-32x32.png"/>
-<link rel="icon" type="image/png" sizes="16x16" href="icon-16x16.png"/>
-<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png"/>
-<link rel="apple-touch-icon" sizes="167x167" href="icon-167x167.png"/>
-<link rel="apple-touch-icon" sizes="152x152" href="icon-152x152.png"/>
-<link rel="apple-touch-icon" sizes="120x120" href="icon-120x120.png"/>
-<link rel="shortcut icon" href="favicon.ico"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=5.0"/>
-<title>OphthalDash</title>
+<title>OphthalDash — Surgical Outcome Analytics</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"/>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<script>
+// Fallback to cdnjs if jsdelivr failed (e.g. blocked by network policy)
+window.addEventListener('load', () => {
+  if (!window.jspdf || !window.jspdf.jsPDF) {
+    const s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+    document.head.appendChild(s);
+  }
+  if (typeof XLSX === 'undefined') {
+    const s2 = document.createElement('script');
+    s2.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+    document.head.appendChild(s2);
+  }
+});
+</script>
 <style>
 /* ── TOKENS ── */
 :root{
@@ -76,8 +75,6 @@ label{font-size:.75rem;font-weight:600;color:var(--t2);text-transform:uppercase;
 .th-row{display:flex;gap:4px;margin-top:7px}
 .th-btn{flex:1;padding:5px 3px;border-radius:5px;border:1px solid rgba(255,255,255,.1);font-size:.64rem;cursor:pointer;background:rgba(255,255,255,.05);color:var(--tnav);font-weight:500;transition:all var(--ease);white-space:nowrap}
 .th-btn:hover,.th-btn.on{background:var(--blue);color:#fff;border-color:var(--blue)}
-.samp-btn{width:100%;padding:6px;margin-bottom:7px;border-radius:5px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:var(--tnav);font-size:.68rem;font-weight:500;cursor:pointer;transition:all var(--ease)}
-.samp-btn:hover{background:rgba(255,255,255,.14);color:#fff}
 .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:199}
 /* ── MAIN ── */
 .main{margin-left:var(--sw);flex:1;display:flex;flex-direction:column;min-height:100vh;min-width:0;overflow-x:hidden}
@@ -223,7 +220,6 @@ label{font-size:.75rem;font-weight:600;color:var(--t2);text-transform:uppercase;
     <div class="nit" onclick="go('research',this)"><span class="i">📄</span>Research Report</div>
   </nav>
   <div class="sb-foot">
-    <button class="samp-btn" onclick="loadSample()">🧪 Load Sample Data</button>
     <div style="color:var(--tnav);font-size:.68rem;margin-bottom:6px">Theme</div>
     <div class="th-row">
       <button class="th-btn on" onclick="setTheme('light',this)">☀️ Light</button>
@@ -526,6 +522,21 @@ label{font-size:.75rem;font-weight:600;color:var(--t2);text-transform:uppercase;
    STATE & CONSTANTS
 ══════════════════════════════════════ */
 let R = JSON.parse(localStorage.getItem('od_r')||'[]');
+let _idCounter=0;
+function uid(){_idCounter++;return `${Date.now()}-${_idCounter}-${Math.random().toString(36).slice(2,8)}`}
+// One-time cleanup: purge any sample/demo records left over from earlier app versions,
+// and repair any duplicate/missing record IDs from older app versions so delete is always safe.
+(function migrateData(){
+  const before=R.length;
+  R=R.filter(r=>!r.isSample && !/^(PT|SAMPLE)-\d{4}-\d{3}$/.test(r.patientId||''));
+  const seen=new Set();
+  let changed=R.length!==before;
+  R.forEach(r=>{
+    if(r.id===undefined||r.id===null||seen.has(r.id)){r.id=uid();changed=true}
+    seen.add(r.id);
+  });
+  if(changed) localStorage.setItem('od_r',JSON.stringify(R));
+})();
 let dyf='all', syf='all', cyf='all';
 let tblPage=1, tblSortCol=4, tblSortDir=-1;
 let CH={};
@@ -601,7 +612,7 @@ function addRec(){
   const preV=document.getElementById('f-pre').value;
   const postV=document.getElementById('f-post').value;
   R.push({
-    id:Date.now(),patientId:pid,age:+age,gender,surgeryType:type,
+    id:uid(),patientId:pid,age:+age,gender,surgeryType:type,
     diagnosis:document.getElementById('f-diag').value.trim(),
     date,eye,
     preVision:preV!==''?+preV:null,
@@ -619,12 +630,14 @@ function clearForm(){
   ['f-gender','f-type','f-eye','f-out'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('f-date').value=new Date().toISOString().split('T')[0];
 }
-function delRec(i){
-  if(!confirm('Delete this record?'))return;
-  R.splice(i,1);save();renderAll();tblRender();toast('Record deleted','er');
+function delRec(id){
+  const idx=R.findIndex(x=>x.id===id);
+  if(idx===-1){toast('Record not found (already deleted?)','er');tblRender();return}
+  if(!confirm(`Delete record for patient "${R[idx].patientId||'—'}"?`))return;
+  R.splice(idx,1);save();renderAll();tblRender();toast('Record deleted','er');
 }
 function clearAll(){
-  if(!confirm('Delete ALL records? Cannot be undone.'))return;
+  if(!confirm(`Delete ALL ${R.length} records? This cannot be undone.`))return;
   R=[];save();renderAll();tblRender();toast('All records cleared','er');
 }
 
@@ -719,7 +732,6 @@ function tblRender(){
   const total=rows.length,pages=Math.max(1,Math.ceil(total/sz));
   if(tblPage>pages)tblPage=1;
   const slice=rows.slice((tblPage-1)*sz,tblPage*sz);
-  const globalIdx=r=>R.findIndex(x=>x.id===r.id);
   document.getElementById('tbl-info').textContent=total?`${(tblPage-1)*sz+1}–${Math.min(tblPage*sz,total)} of ${total}`:'No records';
   document.getElementById('rec-body').innerHTML=slice.map(r=>`
     <tr>
@@ -728,7 +740,7 @@ function tblRender(){
       <td>${r.preVision??'—'}</td><td>${r.postVision??'—'}</td>
       <td>${r.outcome==='Success'?'<span class="bs">✓ Success</span>':'<span class="bf">✗ Failure</span>'}</td>
       <td>${r.complications&&r.complications!=='None'&&r.complications!==''?`<span class="bc">${r.complications}</span>`:'<span style="color:var(--t3)">None</span>'}</td>
-      <td><button class="btn btn-r" onclick="delRec(${globalIdx(r)})">🗑</button></td>
+      <td><button class="btn btn-r" onclick="delRec('${String(r.id).replace(/'/g,"\\'")}')">🗑</button></td>
     </tr>`).join('')||'<tr><td colspan="11" style="text-align:center;color:var(--t3);padding:20px">No records found</td></tr>';
   // pager
   const p=document.getElementById('pager');
@@ -966,6 +978,8 @@ function expCSV(){
 }
 function expXLSX(){
   if(!R.length){toast('No records','er');return}
+  if(typeof XLSX==='undefined'){toast('⚠️ Excel library failed to load. Check connection and reload.','er');console.error('[OphthalDash] XLSX is undefined.');return}
+  try{
   const ws=XLSX.utils.json_to_sheet(R);
   const wb=XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb,ws,'Surgeries');
@@ -976,10 +990,17 @@ function expXLSX(){
   ]),'Summary');
   XLSX.writeFile(wb,'ophthaldash_report.xlsx');
   toast('✅ Excel exported','ok');
+  }catch(err){console.error('[OphthalDash] Excel export failed:',err);toast('❌ Excel export failed: '+err.message,'er')}
 }
 async function expPDF(){
   if(!R.length){toast('No data','er');return}
+  if(!window.jspdf||!window.jspdf.jsPDF){
+    toast('⚠️ PDF library failed to load. Check connection and reload.','er');
+    console.error('[OphthalDash] window.jspdf is undefined — jsPDF script did not load.');
+    return;
+  }
   toast('📄 Generating PDF…');
+  try{
   const{jsPDF}=window.jspdf;
   const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
   const tot=R.length,suc=R.filter(r=>r.outcome==='Success').length;
@@ -1021,6 +1042,10 @@ async function expPDF(){
   }
   doc.save('ophthaldash_report.pdf');
   toast('✅ PDF exported','ok');
+  }catch(err){
+    console.error('[OphthalDash] PDF generation failed:',err);
+    toast('❌ PDF generation failed: '+err.message,'er');
+  }
 }
 function dl(name,content,type){
   const b=new Blob([content],{type}),u=URL.createObjectURL(b),a=document.createElement('a');
@@ -1041,29 +1066,9 @@ function importRows(rows){
   let n=0;
   rows.forEach(r=>{
     const pid=r.patientId||r['Patient ID']||r['patient_id']||'';if(!pid)return;
-    R.push({id:Date.now()+n,patientId:pid,age:+r.age||0,gender:r.gender||'',surgeryType:r.surgeryType||r['Surgery Type']||'',diagnosis:r.diagnosis||'',date:r.date||r['Date']||'',eye:r.eye||'',preVision:parseFloat(r.preVision||r['Pre Vision']||'')||null,postVision:parseFloat(r.postVision||r['Post Vision']||'')||null,outcome:r.outcome||'',complications:r.complications||'None',followup:+r.followup||null});n++;
+    R.push({id:uid(),patientId:pid,age:+r.age||0,gender:r.gender||'',surgeryType:r.surgeryType||r['Surgery Type']||'',diagnosis:r.diagnosis||'',date:r.date||r['Date']||'',eye:r.eye||'',preVision:parseFloat(r.preVision||r['Pre Vision']||'')||null,postVision:parseFloat(r.postVision||r['Post Vision']||'')||null,outcome:r.outcome||'',complications:r.complications||'None',followup:+r.followup||null});n++;
   });
   save();renderAll();tblRender();toast(`✅ ${n} records imported`,'ok');
-}
-
-/* ══════════════════════════════════════
-   SAMPLE DATA
-══════════════════════════════════════ */
-function loadSample(){
-  if(R.length){toast('Clear existing data first','er');return}
-  const diags=['Nuclear Cataract','Post. Vitreous Detachment','POAG','Keratoconus','Myopia','Orbital Fracture','Macular Hole'];
-  const eyes=['Right (OD)','Left (OS)','Both (OU)'];const gens=['Male','Female','Male','Male','Female'];
-  for(let i=0;i<45;i++){
-    const preV=+(Math.random()*1.4+0.3).toFixed(2);
-    const ok=Math.random()>0.18;
-    const imp=ok?Math.random()*.9+.1:Math.random()*.2-.1;
-    const postV=+Math.max(0,preV-imp).toFixed(2);
-    const yr=2022+Math.floor(Math.random()*3);
-    const mo=String(Math.floor(Math.random()*12)+1).padStart(2,'0');
-    const dy=String(Math.floor(Math.random()*28)+1).padStart(2,'0');
-    R.push({id:Date.now()+i,patientId:`PT-${yr}-${String(i+1).padStart(3,'0')}`,age:Math.floor(Math.random()*60)+18,gender:gens[i%5],surgeryType:TYPES[Math.floor(Math.random()*TYPES.length)],diagnosis:diags[Math.floor(Math.random()*diags.length)],date:`${yr}-${mo}-${dy}`,eye:eyes[Math.floor(Math.random()*eyes.length)],preVision:preV,postVision:postV,outcome:ok?'Success':'Failure',complications:Math.random()>.8?['Corneal Edema','IOP Spike','PCR'][Math.floor(Math.random()*3)]:'None',followup:Math.floor(Math.random()*12)+1});
-  }
-  save();renderAll();tblRender();toast('✅ 45 sample records loaded','ok');
 }
 
 /* ══════════════════════════════════════
@@ -1074,33 +1079,6 @@ function toast(msg,type=''){
   el.innerHTML=`<span>${type==='ok'?'✅':type==='er'?'❌':'ℹ️'}</span><span>${msg}</span>`;
   const tc=document.getElementById('tc');tc.appendChild(el);
   setTimeout(()=>{el.style.animation='tOut .3s ease forwards';setTimeout(()=>el.remove(),300)},3000);
-}
-</script>
-
-<script>
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js')
-      .then(reg => console.log('[SW] Registered, scope:', reg.scope))
-      .catch(err => console.warn('[SW] Registration failed:', err));
-  });
-}
-// PWA install prompt
-let deferredPrompt;
-window.addEventListener('beforeinstallprompt', e => {
-  e.preventDefault();
-  deferredPrompt = e;
-  // Show install button if exists
-  const btn = document.getElementById('pwa-install-btn');
-  if (btn) btn.style.display = 'flex';
-});
-window.addEventListener('appinstalled', () => {
-  deferredPrompt = null;
-  const btn = document.getElementById('pwa-install-btn');
-  if (btn) btn.style.display = 'none';
-});
-function installPWA() {
-  if (deferredPrompt) { deferredPrompt.prompt(); deferredPrompt.userChoice.then(() => { deferredPrompt = null; }); }
 }
 </script>
 </body>
